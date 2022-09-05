@@ -162,7 +162,11 @@
                       :items="listadoMaterias"
                       @row-clicked="myRowClickHandler"
                     >
-                      <template slot="row-details">{{ allOpenRows }} </template>
+                      <template slot="row-details">
+                        <b-list-group v-for="com in comisionList" :key="com">
+                          <b-list-group-item>{{com}}</b-list-group-item>
+                        </b-list-group>
+                      </template>
                     </b-table>
                   </div>
                 </div>
@@ -253,6 +257,7 @@ export default {
       listadoMaterias: [],
       nameComision: [],
       allOpenRows: [],
+      comisionList: [],
       items: [
         {
           id:'',
@@ -354,25 +359,11 @@ export default {
     },
     myRowClickHandler: async function (observer) {
       this.nameComision = observer.nombre;
-      var comisionList = await http.get(
+      const comisionResponse = await http.get(
         `/get-comisiones/${this.selected}/${this.nameComision}`
       );
-      console.log(comisionList);
-      this.allOpenRows = [];
+      this.comisionList = Object.keys(comisionResponse.data).map(key => key).filter(el => el !== "Materia");
       this.$set(observer, "_showDetails", !observer._showDetails);
-
-      this.allOpenRows.push(
-        Object.keys(comisionList).map((key) => {
-          if (key == "data") {
-            if (key != "Materia") {
-              return {
-                text: comisionList[key],
-              };
-            }
-          }
-        })
-      );
-      return comisionList.data;
     },
   },
 };
