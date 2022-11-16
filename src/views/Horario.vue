@@ -136,7 +136,7 @@
             <b-row class="d-flex " cols-md="3">
               <p class="h6">Facultad</p>
               <b-form-select
-                  
+                  :value="seleccionFacu"
                   :options="optionsFacu"
                   @change="changeSelectedFacultad"
                   size="sm"
@@ -152,42 +152,33 @@
             <b-row cols="12">
               <div class="d-flex">
                 <b-form-select
-                  
-                  :options="optionsCareer"
+                  :value="seleccion"
+                  :options="options"
                   @change="changeSelectedCareer"
                   size="m"
                   class="mt-3"
                   style="background-color: beige"
                 >
                 </b-form-select>
-                <!-- <div class="mt-3 mx-5">
+                <div class="mt-3 mx-5">
                   Código de Carrera:
                   <strong class="mx-3">{{ seleccion }}</strong>
-                </div> -->
+                </div>
                 <!-- Listado de Carreras -->
 
                 <b-form-select
-                  :options="optionsPeriodos"
+                  :value="seleccionSem"
+                  :options="optionsSem"
+
                   size="sm"
                   class="mt-3"
                   style="background-color: beige"
                 >
                 </b-form-select>
-
-                <br>
-
-                <b-form-select
-                  :options="optionsAnios"
-                  size="sm"
-                  class="mt-3"
-                  style="background-color: beige"
-                >
-                </b-form-select>
-
-                <!-- <div class="mt-3 mx-5">
+                <div class="mt-3 mx-5">
                   Código de Carrera:
                   <strong class="mx-3">{{ seleccion }}</strong>
-                </div> -->
+                </div>
               </div>
             </b-row>
               <!-- cierre Selección de Carreras -->
@@ -291,7 +282,7 @@ export default {
       nuevoHorario: "",
       horarios: [],
       facultadesList:{},
-      careerList: {}, //variable auxiliar
+      careerList: {},
       nuevaActividad: "",
       actividades: [],
       name: "",
@@ -302,9 +293,9 @@ export default {
       seleccionFacu: null,
       selected: [],
       seleccion: null,
-      optionsCareer: [{ value: "null", text: "Seleccione su Carrera" }],//materias
+      options: [{ value: "null", text: "Seleccione su Carrera" }],//materias
       optionsFacu: [{ value: "null", text: "Seleccione su Facultad" }],//facultades
-      optionsPeriodos: [{ value: "null", text: "Seleccione un Semestre" }],//semestres
+      optionsSem: [{ value: "null", text: "Seleccione un Semestre" }],//semestres
       listadoMaterias: [],
       nameComision: [],
       detailsComision: {},
@@ -312,17 +303,7 @@ export default {
       allSelected: false,
       indeterminate: false,
       items: [],
-      itemsFacultades: [],
       id:[],
-      periodosList:{},
-      periodos:{},  
-      optionsAnios: [{ value: "null", text: "Seleccione un Año" },
-                    { value: "1", text: "1ro" },
-                    { value: "2", text: "2ro" },
-                    { value: "3", text: "3ro" },
-                    { value: "4", text: "4ro" },
-                    { value: "5", text: "5ro" },
-                    { value: "6", text: "6ro" }],
     };
   },
   computed: {
@@ -392,11 +373,13 @@ export default {
       //this.optionsFacu = Object.keys(this.facultadesList).map((key) => {
       //  return { value: key, text: this.facultadesList[key] };
       //});
-      // const careerList = await this.getCareerList();
-      // this.careerList = careerList.data.carreras;
-      
+      const careerList = await this.getCareerList();
+      this.careerList = careerList.data.carreras;
+      this.options = Object.keys(this.careerList).map((key) => {
+        return { value: key, text: this.careerList[key] };
+      });
     } catch (error) {
-      console.log(error);
+      console.log(err);
     }
   },
 
@@ -406,13 +389,11 @@ export default {
     },
     changeSelectedFacultad: async function (seleccion) {
       this.seleccionFacu = seleccion;
-      this.itemsFacultades.seleccionFacu = seleccion;
-      await this.getCareerList();
-      await this.getPeriodoList();
-      
-      // this.listadoMaterias = this.factuladesList.data.nombres.map((name) => {
-      //   return { nombre: name };
-      //});
+      this.items.seleccionFacu = seleccion;
+      this.factuladesList = await this.getMateriasList();
+      this.listadoMaterias = this.factuladesList.data.nombres.map((name) => {
+        return { nombre: name };
+      });
     },
     changeSelectedCareer: async function (seleccion) {
       this.seleccion = seleccion;
@@ -434,39 +415,32 @@ export default {
       this.facultadesList = dataFacList.data;
       console.log(this.facultadesList);
 
+      var values = [];
+      for (let key in this.facultadesList){
+        values.push(this.facultadesList[key]);
+      }
+
+      console.log("values: " + values);
+
+      this.optionsFacu = values;
 
       this.facultadesList = Object.keys(this.facultadesList).map((key) => {
-        return { value: key, text: this.facultadesList[key] };
+        return { value: key, name: this.facultadesList[key] };
       });
 
-      this.optionsFacu = this.facultadesList;
 
 
       return dataFacList;
     },
-    getCareerList: async function () {
-      if (this.seleccion == "") return "";
-      const dataList = await http.get(`/carreras/${this.seleccionFacu}`);
-      console.log(dataList);
-      this.careerList = dataList.data;
-      this.carreras = Object.keys(this.careerList).map((key) => {
-        return { value: key, text: this.careerList[key] };
-      });
-      this.optionsCareer = this.carreras;
-      return dataList;
-    },
-
-    getPeriodoList: async function () {
-      if (this.seleccion == "") return "";
-      const dataList = await http.get(`/periodo/${this.seleccionFacu}`);
-      this.periodosList = dataList.data;
-      this.periodos = Object.keys(this.periodosList).map((key) => {
-        return { value: key, text: this.periodosList[key] };
-      });
-      this.optionsPeriodos = this.periodos;
-      return dataList;
-    },
-
+    // getCareerList: async function (item) {
+    //   if (this.seleccion == "") return "";
+    //   const dataList = await http.get("/get-carreras");
+    //   this.careerList = dataList;
+    //   this.carreras = Object.keys(this.careerList).map((key) => {
+    //     return { value: key, name: this.careerList[key] };
+    //   });
+    //   return dataList;
+    // },
     
     getMateriasList: async function () {
       if (!this.seleccion) return [];
